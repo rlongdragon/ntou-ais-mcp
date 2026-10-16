@@ -286,7 +286,7 @@ server.registerTool(
   {
     title: "查詢開課資料",
     description:
-      "查詢全校某個學年期的開課資料，可以依課名、課號或授課教師搜尋。每筆含課號、課名、開課單位、年級班別、教師、學分、必選修、修課人數與人數上下限。使用者想找某門課有哪些班、誰教、還有沒有名額時使用。課綱用 get_syllabus 以課號與班別查詢。",
+      "查詢全校某個學年期的開課資料，可以依課名、課號或授課教師搜尋。每筆含課號、課名、開課單位、年級班別、教師、學分、必選修、修課人數與人數上下限。使用者想找某門課有哪些班、誰教、還有沒有名額時使用；要列出某系所某年級開的全部課用 list_department_courses。課綱用 get_syllabus 以課號與班別查詢。",
     inputSchema: {
       keyword: z.string().min(1).describe("關鍵字：課名、課號或教師姓名"),
       by: z.enum(["title", "code", "teacher"]).optional().describe("依 title（課名，預設）、code（課號）或 teacher（教師）查詢"),
@@ -299,6 +299,28 @@ server.registerTool(
   },
   ({ keyword, by, exact, semester, page, page_size }) =>
     runTool(() => ais.searchCourses({ keyword, by, exact, semester, page, pageSize: page_size }))
+);
+
+server.registerTool(
+  "list_department_courses",
+  {
+    title: "系所開課清單",
+    description:
+      "列出某個系所在某學年期開的所有課，可以再限定年級與班別，例如「資工系三年級這學期開了什麼」。department 可以填系所名稱（例如「資訊工程學系」）或代碼（例如 0507）；名稱對到多個系所（大學部、碩士班…）時會回傳候選清單，請挑一個再呼叫。每筆含課號、課名、年級班別、教師、學分、必選修（A-必修、B-選修）、修課人數與上下限。沒有上課時間，時間在 get_syllabus 的課綱裡。用課名、課號或教師找課請用 search_courses。",
+    inputSchema: {
+      department: z.string().min(1).describe("開課系所名稱或代碼，例如「資訊工程學系」或 0507"),
+      grade: z.number().int().min(1).max(9).optional().describe("年級，不填為全部年級"),
+      class_name: z.string().optional().describe("班別，例如 A、B，不填為全部"),
+      semester: semesterArg,
+    },
+    annotations: { readOnlyHint: true },
+  },
+  ({ department, grade, class_name, semester }) =>
+    runTool(() =>
+      cached(`dept:${department}:${grade ?? ""}:${class_name ?? ""}:${semester ?? ""}`, () =>
+        ais.departmentCourses({ department, grade, className: class_name, semester })
+      )
+    )
 );
 
 server.registerTool(

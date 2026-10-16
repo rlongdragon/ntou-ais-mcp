@@ -12,6 +12,7 @@
 - 「我上次請的假核准了沒？」
 - 「離畢業還差哪些必修？」
 - 「作業系統這學期有幾個班？誰教的？評分方式是什麼？」
+- 「資工系三年級這學期開了哪些選修？」
 
 ## 架構
 
@@ -105,6 +106,7 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ntou-ais-mcp/.env /�
 | `get_credit_transfer` | 抵免申請的審核結果 |
 | `get_graduation_check` | 畢業資格：應修學分、必修科目、學分統計、教務處審查結果 |
 | `search_courses(keyword, by?, exact?, semester?, page?, page_size?)` | 依課名、課號或教師查詢開課資料 |
+| `list_department_courses(department, grade?, class_name?, semester?)` | 某系所（與年級、班別）某學年期開的所有課 |
 | `get_syllabus(pkno? \| course_code, class_name?, semester?)` | 課綱 |
 | `login` | 帳密錯誤停止自動登入、改好帳密後重新登入（平常不需要） |
 
