@@ -131,13 +131,13 @@ const semesterArg = z
   .optional()
   .describe("學年期，學年加學期，例如 1151 是 115 學年度第 1 學期，3、4 是暑修；不填為目前學年期");
 
-const instructions = `這個 server 用使用者本人的帳號查詢國立臺灣海洋大學教學務系統 AIS（課表、成績、缺曠、獎懲、畢業資格、開課資料與課綱），全部唯讀。
+const instructions = `這個 server 用使用者本人的帳號查詢國立臺灣海洋大學教學務系統 AIS（課表、成績、成績預警、缺曠、請假、獎懲、獎助學金、抵免、畢業資格、開課資料與課綱），全部唯讀。
 
 - 學年期寫成學年加學期，例如 1151 是 115 學年度第 1 學期（民國年），3、4 是暑修。
 - 登入與驗證碼都由 server 自動處理，不需要使用者介入；第一次查詢或 session 過期時會多花幾秒登入。
 - AIS 回應較慢，成績、課表一次查詢約需數秒，請避免為了同一個問題重複呼叫。
-- 與 TronClass（課程平台）的分工：這裡查正式課表、上課時間與教室、學期成績與學分、缺曠、獎懲、畢業資格、全校開課資料與課綱；作業、教材、課程公告、線上考試、老師登記的作業與考試分數、討論區在 TronClass。兩邊的課程 ID 不通用，要用課名或課號對照。
-- 成績、缺曠、獎懲屬於使用者的個人資料，只回答使用者本人的問題，不要轉述給其他人或寫進公開的地方。`;
+- 與 TronClass（課程平台）的分工：這裡查正式課表、上課時間與教室、學期成績與學分、成績預警、缺曠、請假紀錄、獎懲、獎助學金、抵免、畢業資格、全校開課資料與課綱；作業、教材、課程公告、線上考試、老師登記的作業與考試分數、討論區在 TronClass。兩邊的課程 ID 不通用，要用課名或課號對照。
+- 成績、缺曠、請假、獎懲、獎助學金屬於使用者的個人資料，只回答使用者本人的問題，不要轉述給其他人或寫進公開的地方。`;
 
 const server = new McpServer({ name: "ais-ntou", version: "0.1.0" }, { instructions });
 
@@ -223,6 +223,51 @@ server.registerTool(
     annotations: { readOnlyHint: true },
   },
   () => runTool(() => cached("conduct", () => ais.conduct()))
+);
+
+server.registerTool(
+  "get_early_warnings",
+  {
+    title: "成績預警",
+    description:
+      "查詢本學期各科的期中成績預警。每筆含課號、課名、班別、必選修、學分與預警狀況；warning 是空字串表示該科沒有被預警。只能查目前學年期。使用者問「我有沒有被預警」「哪科可能被當」時使用；學期結束後的正式成績用 get_grades。",
+    annotations: { readOnlyHint: true },
+  },
+  () => runTool(() => cached("earlyWarnings", () => ais.earlyWarnings()))
+);
+
+server.registerTool(
+  "get_leave_records",
+  {
+    title: "請假紀錄",
+    description:
+      "查詢請假紀錄：假單序號、申請日期、請假類別（事假、病假、公假…）、請假起迄日、天數或節數，以及系所、生輔組、學務處各層的審核狀態與上傳證明件數。日期是民國年（例如 115/10/08）。欄位名稱依 AIS 原始表頭。缺曠節數用 get_absences。",
+    annotations: { readOnlyHint: true },
+  },
+  () => runTool(() => cached("leaves", () => ais.leaves()))
+);
+
+server.registerTool(
+  "get_scholarships",
+  {
+    title: "獎助學金申請紀錄",
+    description:
+      "查詢某個學年期的獎助學金申請紀錄與審核狀態。AIS 一次只能查一個學年期，不填為目前學年期；要查多個學期請分別呼叫。沒有申請紀錄時 applications 是空的。欄位名稱依 AIS 原始表頭。",
+    inputSchema: { semester: semesterArg },
+    annotations: { readOnlyHint: true },
+  },
+  ({ semester }) => runTool(() => cached(`scholarships:${semester ?? ""}`, () => ais.scholarships(semester)))
+);
+
+server.registerTool(
+  "get_credit_transfer",
+  {
+    title: "抵免結果",
+    description:
+      "查詢抵免學分申請的審核結果。applied 為 false 表示沒有申請過抵免（message 是 AIS 的提示）。只會查詢，不會在 AIS 上確認抵免結果。欄位名稱依 AIS 原始表頭。",
+    annotations: { readOnlyHint: true },
+  },
+  () => runTool(() => cached("creditTransfer", () => ais.creditTransfer()))
 );
 
 server.registerTool(

@@ -1,6 +1,6 @@
 # ntou-ais-mcp
 
-國立臺灣海洋大學教學務系統 AIS（`https://ais.ntou.edu.tw`）的非官方 MCP server。接上 Claude Code、Claude Desktop 等 MCP client 後，可以直接用對話查課表、成績、缺曠、操行與獎懲、畢業資格、開課資料與課綱。全部唯讀，不會改動 AIS 上的資料。
+國立臺灣海洋大學教學務系統 AIS（`https://ais.ntou.edu.tw`）的非官方 MCP server。接上 Claude Code、Claude Desktop 等 MCP client 後，可以直接用對話查課表、成績、成績預警、缺曠、請假、操行與獎懲、獎助學金、抵免、畢業資格、開課資料與課綱。全部唯讀，不會改動 AIS 上的資料。
 
 > 本專案不是海大官方的工具，也未受其委託或背書。AIS 改版時部分功能可能暫時失效。
 
@@ -8,7 +8,8 @@
 
 - 「我星期三有什麼課？在哪間教室？」
 - 「上學期成績如何？有沒有被當？」
-- 「我這學期缺曠幾節？操行成績多少？」
+- 「我這學期缺曠幾節？操行成績多少？有沒有被預警？」
+- 「我上次請的假核准了沒？」
 - 「離畢業還差哪些必修？」
 - 「作業系統這學期有幾個班？誰教的？評分方式是什麼？」
 
@@ -98,6 +99,10 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ntou-ais-mcp/.env /�
 | `get_grades(semester?)` | 學期成績（不指定為歷年）、歷年累計學分、各學期修課與及格學分、學分加權平均（估算） |
 | `get_absences` | 本學期缺曠總節數與明細 |
 | `get_conduct` | 目前操行成績與獎懲紀錄 |
+| `get_early_warnings` | 本學期各科成績預警 |
+| `get_leave_records` | 請假紀錄與各層審核狀態 |
+| `get_scholarships(semester?)` | 某學年期的獎助學金申請紀錄 |
+| `get_credit_transfer` | 抵免申請的審核結果 |
 | `get_graduation_check` | 畢業資格：應修學分、必修科目、學分統計、教務處審查結果 |
 | `search_courses(keyword, by?, exact?, semester?, page?, page_size?)` | 依課名、課號或教師查詢開課資料 |
 | `get_syllabus(pkno? \| course_code, class_name?, semester?)` | 課綱 |
