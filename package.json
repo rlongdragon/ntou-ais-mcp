@@ -1,0 +1,25 @@
+{
+  "name": "ais-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for NTOU AIS, built on ntou-ais-api",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "rlongdragon",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ais-mcp": "dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "ntou-ais-api": "file:../ntou-ais-api",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}
