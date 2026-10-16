@@ -1,4 +1,4 @@
-# ais-mcp
+# ntou-ais-mcp
 
 國立臺灣海洋大學教學務系統 AIS（`https://ais.ntou.edu.tw`）的非官方 MCP server。接上 Claude Code、Claude Desktop 等 MCP client 後，可以直接用對話查課表、成績、缺曠、操行與獎懲、畢業資格、開課資料與課綱。全部唯讀，不會改動 AIS 上的資料。
 
@@ -18,7 +18,7 @@
 MCP client（Claude Code / Claude Desktop）
         │  stdio
         ▼
-ais-mcp        ← 本專案：把查詢包成 MCP tool、整理輸出、保存 session
+ntou-ais-mcp   ← 本專案：把查詢包成 MCP tool、整理輸出、保存 session
         │  import
         ▼
 ntou-ais-api   ← 登入（本機辨識驗證碼）、session、各頁面的解析（https://github.com/rlongdragon/ntou-ais-api）
@@ -34,20 +34,22 @@ ais.ntou.edu.tw
 ### 1. 安裝與建置
 
 ```bash
-git clone https://github.com/rlongdragon/ais-mcp.git
-cd ais-mcp
+git clone https://github.com/rlongdragon/ntou-ais-mcp.git
+cd ntou-ais-mcp
 npm install
 npm run build
 ```
+
+ntou-ais-api 會從 GitHub 安裝，安裝時透過它的 `prepare` script 自動 build。若 npm 顯示 `allow-scripts` 警告，而且 `node_modules/ntou-ais-api/dist` 不存在，請執行 `npm approve-scripts ntou-ais-api` 後重新 `npm install`。
 
 ### 2. 設定帳密
 
 帳密放在本機的設定檔，只有自己讀得到：
 
 ```bash
-mkdir -p ~/.config/ais-mcp
-install -m 600 /dev/null ~/.config/ais-mcp/.env
-nano ~/.config/ais-mcp/.env
+mkdir -p ~/.config/ntou-ais-mcp
+install -m 600 /dev/null ~/.config/ntou-ais-mcp/.env
+nano ~/.config/ntou-ais-mcp/.env
 ```
 
 ```
@@ -62,7 +64,7 @@ AIS 與 TronClass 是同一組帳密。已經在用 [tronclass-mcp](https://gith
 **Claude Code**：
 
 ```bash
-claude mcp add -s user ais -- node --env-file=$HOME/.config/ais-mcp/.env /絕對路徑/ais-mcp/dist/index.js
+claude mcp add -s user ais -- node --env-file=$HOME/.config/ntou-ais-mcp/.env /絕對路徑/ntou-ais-mcp/dist/index.js
 ```
 
 **Claude Desktop**：在 `claude_desktop_config.json` 的 `mcpServers` 加入：
@@ -72,7 +74,7 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ais-mcp/.env /絕對
   "mcpServers": {
     "ais": {
       "command": "node",
-      "args": ["--env-file=/home/你/.config/ais-mcp/.env", "/絕對路徑/ais-mcp/dist/index.js"]
+      "args": ["--env-file=/home/你/.config/ntou-ais-mcp/.env", "/絕對路徑/ntou-ais-mcp/dist/index.js"]
     }
   }
 }
@@ -84,7 +86,7 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ais-mcp/.env /絕對
 |---|---|
 | `AIS_USER`（或 `TRON_USER`） | 學號（必填） |
 | `AIS_PASS`（或 `TRON_PASS`） | 密碼（必填） |
-| `AIS_SESSION_FILE` | 選填，保存 session 的檔案，預設 `~/.config/ais-mcp/session.json`；設成空字串可停用 |
+| `AIS_SESSION_FILE` | 選填，保存 session 的檔案，預設 `~/.config/ntou-ais-mcp/session.json`；設成空字串可停用 |
 
 ## Tools
 
@@ -108,7 +110,7 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ais-mcp/.env /絕對
 
 - 登入由 ntou-ais-api 處理：AIS 沒有接學校的 CAS，每次登入都要驗證碼，會在本機用 OCR 模型自動辨識，不需要使用者或模型介入。
 - 驗證碼錯誤會自動換一張重試；帳號或密碼錯誤**不會**重試，以免帳號被鎖。
-- session 會保存到 `~/.config/ais-mcp/session.json`（權限 600），重開 MCP client 後直接沿用，過期時才重新登入。
+- session 會保存到 `~/.config/ntou-ais-mcp/session.json`（權限 600），重開 MCP client 後直接沿用，過期時才重新登入。
 - AIS 不允許同一個帳號同時登入兩處，server 登入時會把其他地方（例如瀏覽器）的 AIS 登出。
 
 ## 隱私

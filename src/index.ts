@@ -17,7 +17,7 @@ if (!username || !password) {
 }
 
 // 保存 session 的檔案，重啟後沿用以減少登入；設成空字串可停用
-const sessionFile = process.env.AIS_SESSION_FILE ?? join(homedir(), ".config", "ais-mcp", "session.json");
+const sessionFile = process.env.AIS_SESSION_FILE ?? join(homedir(), ".config", "ntou-ais-mcp", "session.json");
 
 const ais = new AisClient({ username, password, log: (m) => console.error(m) });
 let savedSession: string | undefined;
@@ -279,4 +279,4 @@ server.registerTool(
 );
 
 await server.connect(new StdioServerTransport());
-console.error("ais-mcp 已啟動");
+console.error("ntou-ais-mcp 已啟動");
