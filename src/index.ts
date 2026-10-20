@@ -131,9 +131,10 @@ const semesterArg = z
   .optional()
   .describe("學年期，學年加學期，例如 1151 是 115 學年度第 1 學期，3、4 是暑修；不填為目前學年期");
 
-const instructions = `這個 server 用使用者本人的帳號查詢國立臺灣海洋大學教學務系統 AIS（課表、成績、成績預警、缺曠、請假、獎懲、獎助學金、抵免、畢業資格、開課資料與課綱），全部唯讀。
+const instructions = `這個 server 用使用者本人的帳號查詢國立臺灣海洋大學教學務系統 AIS（課表、成績、成績預警、缺曠、請假、獎懲、獎助學金、抵免、畢業資格、開課資料與課綱），以及填寫期中／期末課程問卷（教學評鑑）。除了 submit_course_survey 會送出問卷，其他 tool 都是唯讀。
 
 - 學年期寫成學年加學期，例如 1151 是 115 學年度第 1 學期（民國年），3、4 是暑修。
+- submit_course_survey 送出的是使用者對老師的教學評鑑，每份只能填一次、送出後無法修改。答案要反映使用者自己的意見，不要替使用者編造評價；送出前把每題要選的答案列給使用者確認，使用者已經明確交代答案或要求直接送出時照他的意思做。
 - 登入與驗證碼都由 server 自動處理，不需要使用者介入；第一次查詢或 session 過期時會多花幾秒登入。
 - AIS 回應較慢，成績、課表一次查詢約需數秒，請避免為了同一個問題重複呼叫。
 - 與 TronClass（課程平台）的分工：這裡查正式課表、上課時間與教室、學期成績與學分、成績預警、缺曠、請假紀錄、獎懲、獎助學金、抵免、畢業資格、全校開課資料與課綱；作業、教材、課程公告、線上考試、老師登記的作業與考試分數、討論區在 TronClass。兩邊的課程 ID 不通用，要用課名或課號對照。
@@ -321,6 +322,61 @@ server.registerTool(
         ais.departmentCourses({ department, grade, className: class_name, semester })
       )
     )
+);
+
+const surveyCode = z.string().min(1).describe("課號，例如 B570332J，可從 list_course_surveys 取得");
+const surveyTeacher = z.string().optional().describe("待評鑑教師姓名；同一門課有多位教師時才需要");
+
+server.registerTool(
+  "list_course_surveys",
+  {
+    title: "課程問卷清單",
+    description:
+      "列出本期要填的課程問卷（教學評鑑，例如期中教學意見調查）：每門課的課號、課名、待評鑑教師，以及 filled 是否已填。不在填寫期間時 open 為 false，message 是 AIS 的說明。使用者問「我還有哪些問卷沒填」時使用。",
+    annotations: { readOnlyHint: true },
+  },
+  () => runTool(() => ais.courseSurveys())
+);
+
+server.registerTool(
+  "get_course_survey",
+  {
+    title: "課程問卷題目",
+    description:
+      "讀取某門課問卷的題目，不會送出。每題含題號、題組、題目、是否必填，選擇題附上選項（作答時用 1 起算的序號，例如 1 = 非常同意），文字題是意見欄。送出前先用這個拿到題目，再把要選的答案列給使用者確認。已經填過的問卷無法再開啟。",
+    inputSchema: { course_code: surveyCode, teacher: surveyTeacher },
+    annotations: { readOnlyHint: true },
+  },
+  ({ course_code, teacher }) => runTool(() => ais.getSurvey(course_code, teacher))
+);
+
+server.registerTool(
+  "submit_course_survey",
+  {
+    title: "送出課程問卷",
+    description:
+      "送出某門課的問卷（教學評鑑）。每份只能填一次，送出後無法修改，所以呼叫前要先用 get_course_survey 看題目，把每題要選的答案告訴使用者並取得同意；使用者已經明確交代答案（例如「選擇題都選非常同意、意見欄留白」）時照做。答案要反映使用者自己的意見，不要自行編造評價。必填題都要作答；選擇題用 choice（1 起算的選項序號），文字題用 text，不作答的題目省略即可。送出後會確認 AIS 已標示為已填才回報成功。",
+    inputSchema: {
+      course_code: surveyCode,
+      teacher: surveyTeacher,
+      answers: z
+        .array(
+          z.object({
+            question: z.number().int().min(1).describe("題號"),
+            choice: z.number().int().min(1).optional().describe("選擇題的選項序號，1 起算"),
+            text: z.string().max(4000).optional().describe("文字題的內容"),
+          })
+        )
+        .min(1)
+        .describe("各題的答案"),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+  },
+  ({ course_code, teacher, answers }) =>
+    runTool(async () => {
+      const result = await ais.submitSurvey(course_code, answers, { teacher });
+      return { course_code, ...result };
+    })
 );
 
 server.registerTool(

@@ -1,6 +1,6 @@
 # ntou-ais-mcp
 
-國立臺灣海洋大學教學務系統 AIS（`https://ais.ntou.edu.tw`）的非官方 MCP server。接上 Claude Code、Claude Desktop 等 MCP client 後，可以直接用對話查課表、成績、成績預警、缺曠、請假、操行與獎懲、獎助學金、抵免、畢業資格、開課資料與課綱。全部唯讀，不會改動 AIS 上的資料。
+國立臺灣海洋大學教學務系統 AIS（`https://ais.ntou.edu.tw`）的非官方 MCP server。接上 Claude Code、Claude Desktop 等 MCP client 後，可以直接用對話查課表、成績、成績預警、缺曠、請假、操行與獎懲、獎助學金、抵免、畢業資格、開課資料與課綱。除了送出課程問卷，其他都是唯讀，不會改動 AIS 上的資料。
 
 > 本專案不是海大官方的工具，也未受其委託或背書。AIS 改版時部分功能可能暫時失效。
 
@@ -13,6 +13,7 @@
 - 「離畢業還差哪些必修？」
 - 「作業系統這學期有幾個班？誰教的？評分方式是什麼？」
 - 「資工系三年級這學期開了哪些選修？」
+- 「我還有哪些期中問卷沒填？系管那門選擇題都填非常同意，意見欄寫沒有。」
 
 ## 架構
 
@@ -107,11 +108,18 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ntou-ais-mcp/.env /�
 | `get_graduation_check` | 畢業資格：應修學分、必修科目、學分統計、教務處審查結果 |
 | `search_courses(keyword, by?, exact?, semester?, page?, page_size?)` | 依課名、課號或教師查詢開課資料 |
 | `list_department_courses(department, grade?, class_name?, semester?)` | 某系所（與年級、班別）某學年期開的所有課 |
+| `list_course_surveys` | 本期課程問卷（教學評鑑）與是否已填 |
+| `get_course_survey(course_code, teacher?)` | 問卷題目與選項（只讀取） |
+| `submit_course_survey(course_code, answers, teacher?)` | 送出問卷（**寫入**；每份只能填一次） |
 | `get_syllabus(pkno? \| course_code, class_name?, semester?)` | 課綱 |
 | `login` | 帳密錯誤停止自動登入、改好帳密後重新登入（平常不需要） |
 
 - `get_graduation_check` 的「已得學分」等欄位是教務處審查後才有，還沒審查時都是 0，不代表沒有學分；tool 描述會提示模型改用成績對照必修科目估算。
 - 成績、課表、畢業資格等查詢結果在 server 內暫存 5 分鐘，避免重複查詢 AIS。
+
+### 填課程問卷
+
+`submit_course_survey` 是唯一會改動 AIS 的 tool，MCP annotation 標為 destructive，client 通常會在執行前請使用者確認。tool 描述要求模型先用 `get_course_survey` 看題目、把答案列給使用者確認，而且答案要反映使用者自己的意見；使用者明確交代答案（例如「選擇題都選非常同意」）時照做。送出後會確認 AIS 已標示為已填才回報成功。
 
 ## 登入
 
@@ -132,7 +140,7 @@ claude mcp add -s user ais -- node --env-file=$HOME/.config/ntou-ais-mcp/.env /�
 - AIS 回應較慢，成績、課表一次查詢約需數秒。
 - 缺曠只能查目前學年期。
 - 只測試過大學部學生帳號。
-- 不提供選課、請假等寫入功能。
+- 不提供選課、請假等寫入功能（課程問卷除外）。
 
 ## 開發
 
